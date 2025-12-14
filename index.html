@@ -156,8 +156,9 @@
                                     <tr>
                                         <th class="py-2 px-3 border-b text-left font-semibold text-slate-700">Miesiąc</th>
                                         <th class="py-2 px-3 border-b text-left font-semibold text-slate-700">Nowe osoby</th>
-                                        <th class="py-2 px-3 border-b text-left font-semibold text-slate-700">PV z LRP</th>
+                                        <th class="py-2 px-3 border-b text-left font-semibold text-slate-700">PV z LRP (Fast Start)</th>
                                         <th class="py-2 px-3 border-b text-center font-semibold text-slate-700">Moc Trzech</th>
+                                        <th class="py-2 px-3 border-b text-center font-semibold text-slate-700">Boost</th>
                                     </tr>
                                 </thead>
                                 <tbody id="monthsTableBody" class="text-slate-700">
@@ -184,6 +185,10 @@
                                 <div class="flex justify-between">
                                     <span>Premie Moc Trzech:</span>
                                     <span class="font-semibold" id="incomePowerOfThree">0 zł</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Premie Boost:</span>
+                                    <span class="font-semibold" id="incomeBoost">0 zł</span>
                                 </div>
                                 <div class="flex justify-between border-t-2 border-green-300 pt-2 mt-2">
                                     <span class="font-bold">SUMA PRZYCHODÓW:</span>
@@ -232,7 +237,8 @@
         // Stałe
         const INCOME_PER_PERSON = 200;
         const INCOME_PER_100PV = 80;
-        const POWER_OF_THREE_BONUS = 370;
+        const POWER_OF_THREE_BONUS = 185;
+        const BOOST_BONUS = 185;
         const MONTHLY_COSTS = 500;
 
         // Formatowanie kwoty w PLN
@@ -260,6 +266,9 @@
                     <td class="py-2 px-3 text-center">
                         <input type="checkbox" class="month-input power-of-three" data-month="${i}">
                     </td>
+                    <td class="py-2 px-3 text-center">
+                        <input type="checkbox" class="month-input boost" data-month="${i}">
+                    </td>
                 `;
                 tbody.appendChild(row);
             }
@@ -280,21 +289,26 @@
             let totalNewPeopleIncome = 0;
             let totalFastStartIncome = 0;
             let totalPowerOfThreeBonus = 0;
+            let totalBoostBonus = 0;
 
             // Zbierz dane z każdego miesiąca
             for (let i = 1; i <= numMonths; i++) {
                 const newPeople = parseInt(document.querySelector(`.new-people[data-month="${i}"]`)?.value) || 0;
                 const pvLrp = parseInt(document.querySelector(`.pv-lrp[data-month="${i}"]`)?.value) || 0;
                 const powerOfThree = document.querySelector(`.power-of-three[data-month="${i}"]`)?.checked || false;
+                const boost = document.querySelector(`.boost[data-month="${i}"]`)?.checked || false;
 
                 totalNewPeopleIncome += newPeople * INCOME_PER_PERSON;
                 totalFastStartIncome += Math.floor(pvLrp / 100) * INCOME_PER_100PV;
                 if (powerOfThree) {
                     totalPowerOfThreeBonus += POWER_OF_THREE_BONUS;
                 }
+                if (boost) {
+                    totalBoostBonus += BOOST_BONUS;
+                }
             }
 
-            const totalIncome = totalNewPeopleIncome + totalFastStartIncome + totalPowerOfThreeBonus;
+            const totalIncome = totalNewPeopleIncome + totalFastStartIncome + totalPowerOfThreeBonus + totalBoostBonus;
             const totalCosts = numMonths * MONTHLY_COSTS;
             const netProfit = totalIncome - totalCosts;
 
@@ -302,6 +316,7 @@
             document.getElementById('incomeNewPeople').textContent = formatCurrency(totalNewPeopleIncome);
             document.getElementById('incomeFastStart').textContent = formatCurrency(totalFastStartIncome);
             document.getElementById('incomePowerOfThree').textContent = formatCurrency(totalPowerOfThreeBonus);
+            document.getElementById('incomeBoost').textContent = formatCurrency(totalBoostBonus);
             document.getElementById('totalIncome').textContent = formatCurrency(totalIncome);
 
             document.getElementById('monthsCount').textContent = numMonths;
