@@ -225,60 +225,21 @@
                                     <span class="font-bold text-2xl" id="netProfit">0 zł</span>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Plan działania -->
-                        <div class="bg-blue-50 border-l-4 border-blue-500 rounded p-4 mt-4">
-                            <h3 class="text-lg font-bold text-slate-800 mb-3">Co zrobić, aby to osiągnąć?</h3>
-                            <div class="space-y-3 text-base">
-                                <div class="bg-white rounded p-3 border-l-2 border-green-400">
-                                    <p class="font-semibold text-slate-800 mb-2">1. Pozyskiwanie nowych osób (200 zł każda)</p>
-                                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
-                                        <li>• Zaprosić nowe osoby do programu doTERRA</li>
-                                        <li>• Za każdą zarejestrowaną osobę otrzymujesz 200 zł</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-white rounded p-3 border-l-2 border-purple-400">
-                                    <p class="font-semibold text-slate-800 mb-2">2. Fast Start - PV z LRP (80 zł za każde 100 PV)</p>
-                                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
-                                        <li>• Osoby zarejestrowane w ostatnich 60 dniach składają zamówienia LRP</li>
-                                        <li>• Za każde 100 PV z zamówień LRP otrzymujesz 80 zł</li>
-                                        <li>• Wspieraj swój zespół w regularnych zakupach</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-white rounded p-3 border-l-2 border-amber-400">
-                                    <p class="font-semibold text-slate-800 mb-2">3. Moc Trzech (185 zł)</p>
-                                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
-                                        <li>• Spełnij wymagania programu Moc Trzech</li>
-                                        <li>• Premia 185 zł za każdy miesiąc, gdy warunek jest spełniony</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-white rounded p-3 border-l-2 border-blue-400">
-                                    <p class="font-semibold text-slate-800 mb-2">4. Boost (185 zł)</p>
-                                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
-                                        <li>• Osiągnij cele programu Boost</li>
-                                        <li>• Dodatkowa premia 185 zł miesięcznie</li>
-                                    </ul>
-                                </div>
-
-                                <div class="bg-white rounded p-3 border-l-2 border-red-400">
-                                    <p class="font-semibold text-slate-800 mb-2">5. Koszty operacyjne (538 zł/miesiąc)</p>
-                                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
-                                        <li>• Zaplanuj budżet na regularne zamówienia LRP</li>
-                                        <li>• Koszty niezbędne do utrzymania aktywności w systemie</li>
-                                    </ul>
-                                </div>
-
-                                <div class="mt-4 p-3 bg-green-100 rounded border border-green-300">
-                                    <p class="font-bold text-green-800 text-center">
-                                        💡 Wskazówka: Regularność i systematyczne działanie to klucz do sukcesu!
-                                    </p>
-                                </div>
+                            <!-- Przycisk do generowania planu -->
+                            <div class="mt-4 text-center">
+                                <button
+                                    id="generatePlanButton"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 shadow-md hover:shadow-lg"
+                                    onclick="generateActionPlan()"
+                                >
+                                    📋 Wygeneruj plan działania
+                                </button>
                             </div>
                         </div>
+
+                        <!-- Plan działania (generowany dynamicznie) -->
+                        <div id="actionPlanSection" style="display: none;"></div>
                     </div>
 
                 </div>
@@ -343,6 +304,10 @@
             let totalFastStartIncome = 0;
             let totalPowerOfThreeBonus = 0;
             let totalBoostBonus = 0;
+            let totalNewPeople = 0;
+            let totalPvLrp = 0;
+            let powerOfThreeCount = 0;
+            let boostCount = 0;
 
             // Zbierz dane z każdego miesiąca
             for (let i = 1; i <= numMonths; i++) {
@@ -351,13 +316,18 @@
                 const powerOfThree = document.querySelector(`.power-of-three[data-month="${i}"]`)?.checked || false;
                 const boost = document.querySelector(`.boost[data-month="${i}"]`)?.checked || false;
 
+                totalNewPeople += newPeople;
+                totalPvLrp += pvLrp;
+
                 totalNewPeopleIncome += newPeople * INCOME_PER_PERSON;
                 totalFastStartIncome += Math.floor(pvLrp / 100) * INCOME_PER_100PV;
                 if (powerOfThree) {
                     totalPowerOfThreeBonus += POWER_OF_THREE_BONUS;
+                    powerOfThreeCount++;
                 }
                 if (boost) {
                     totalBoostBonus += BOOST_BONUS;
+                    boostCount++;
                 }
             }
 
@@ -381,6 +351,153 @@
             const netProfitElement = document.getElementById('netProfit');
             netProfitElement.textContent = formatCurrency(netProfit);
             netProfitElement.className = 'font-bold text-2xl ' + (netProfit >= 0 ? 'text-green-600' : 'text-red-600');
+
+            // Zapisz dane do użycia w planie działania
+            window.calculationData = {
+                numMonths,
+                totalNewPeople,
+                totalPvLrp,
+                powerOfThreeCount,
+                boostCount,
+                totalNewPeopleIncome,
+                totalFastStartIncome,
+                totalPowerOfThreeBonus,
+                totalBoostBonus,
+                totalIncome,
+                totalCosts,
+                netProfit
+            };
+        }
+
+        // Generowanie spersonalizowanego planu działania
+        function generateActionPlan() {
+            const data = window.calculationData;
+            if (!data) {
+                alert('Najpierw wprowadź dane w kalkulatorze!');
+                return;
+            }
+
+            const planSection = document.getElementById('actionPlanSection');
+            let planHTML = `
+                <div class="bg-blue-50 border-l-4 border-blue-500 rounded p-4 mt-4">
+                    <h3 class="text-lg font-bold text-slate-800 mb-3">📋 Twój Spersonalizowany Plan Działania</h3>
+                    <div class="space-y-3 text-base">
+            `;
+
+            let stepNumber = 1;
+
+            // 1. Pozyskiwanie nowych osób
+            if (data.totalNewPeople > 0) {
+                const avgPerMonth = (data.totalNewPeople / data.numMonths).toFixed(1);
+                planHTML += `
+                    <div class="bg-white rounded p-3 border-l-2 border-green-400">
+                        <p class="font-semibold text-slate-800 mb-2">${stepNumber}. Pozyskiwanie nowych osób</p>
+                        <ul class="ml-4 space-y-1 text-sm text-slate-700">
+                            <li>• <strong>Cel:</strong> Zarejestrować ${data.totalNewPeople} ${data.totalNewPeople === 1 ? 'osobę' : data.totalNewPeople < 5 ? 'osoby' : 'osób'} w ciągu ${data.numMonths} ${data.numMonths === 1 ? 'miesiąca' : data.numMonths < 5 ? 'miesięcy' : 'miesięcy'}</li>
+                            <li>• <strong>Średnio:</strong> ${avgPerMonth} ${avgPerMonth == 1 ? 'osoba' : 'osoby'} na miesiąc</li>
+                            <li>• <strong>Przychód:</strong> ${formatCurrency(data.totalNewPeopleIncome)} (200 zł × ${data.totalNewPeople})</li>
+                            <li>• <strong>Działanie:</strong> Dziel się produktami, organizuj spotkania, prowadź rozmowy o możliwościach biznesowych</li>
+                        </ul>
+                    </div>
+                `;
+                stepNumber++;
+            }
+
+            // 2. Fast Start - PV z LRP
+            if (data.totalPvLrp > 0) {
+                const avgPvPerMonth = (data.totalPvLrp / data.numMonths).toFixed(0);
+                const units100Pv = Math.floor(data.totalPvLrp / 100);
+                planHTML += `
+                    <div class="bg-white rounded p-3 border-l-2 border-purple-400">
+                        <p class="font-semibold text-slate-800 mb-2">${stepNumber}. Fast Start - PV z LRP</p>
+                        <ul class="ml-4 space-y-1 text-sm text-slate-700">
+                            <li>• <strong>Cel:</strong> Osiągnąć ${data.totalPvLrp} PV z zamówień LRP</li>
+                            <li>• <strong>Średnio:</strong> ${avgPvPerMonth} PV na miesiąc</li>
+                            <li>• <strong>Przychód:</strong> ${formatCurrency(data.totalFastStartIncome)} (80 zł × ${units100Pv} jednostek po 100 PV)</li>
+                            <li>• <strong>Działanie:</strong> Wspieraj nowe osoby w pierwszych 60 dniach, pomóż im skonfigurować LRP</li>
+                        </ul>
+                    </div>
+                `;
+                stepNumber++;
+            }
+
+            // 3. Moc Trzech
+            if (data.powerOfThreeCount > 0) {
+                planHTML += `
+                    <div class="bg-white rounded p-3 border-l-2 border-amber-400">
+                        <p class="font-semibold text-slate-800 mb-2">${stepNumber}. Moc Trzech</p>
+                        <ul class="ml-4 space-y-1 text-sm text-slate-700">
+                            <li>• <strong>Cel:</strong> Osiągnąć Moc Trzech przez ${data.powerOfThreeCount} ${data.powerOfThreeCount === 1 ? 'miesiąc' : data.powerOfThreeCount < 5 ? 'miesiące' : 'miesięcy'}</li>
+                            <li>• <strong>Przychód:</strong> ${formatCurrency(data.totalPowerOfThreeBonus)} (185 zł × ${data.powerOfThreeCount})</li>
+                            <li>• <strong>Działanie:</strong> Spełnij wymagania programu Moc Trzech w zaplanowanych miesiącach</li>
+                        </ul>
+                    </div>
+                `;
+                stepNumber++;
+            }
+
+            // 4. Boost
+            if (data.boostCount > 0) {
+                planHTML += `
+                    <div class="bg-white rounded p-3 border-l-2 border-blue-400">
+                        <p class="font-semibold text-slate-800 mb-2">${stepNumber}. Boost</p>
+                        <ul class="ml-4 space-y-1 text-sm text-slate-700">
+                            <li>• <strong>Cel:</strong> Osiągnąć Boost przez ${data.boostCount} ${data.boostCount === 1 ? 'miesiąc' : data.boostCount < 5 ? 'miesiące' : 'miesięcy'}</li>
+                            <li>• <strong>Przychód:</strong> ${formatCurrency(data.totalBoostBonus)} (185 zł × ${data.boostCount})</li>
+                            <li>• <strong>Działanie:</strong> Realizuj cele programu Boost w zaplanowanych miesiącach</li>
+                        </ul>
+                    </div>
+                `;
+                stepNumber++;
+            }
+
+            // 5. Koszty
+            planHTML += `
+                <div class="bg-white rounded p-3 border-l-2 border-red-400">
+                    <p class="font-semibold text-slate-800 mb-2">${stepNumber}. Koszty operacyjne</p>
+                    <ul class="ml-4 space-y-1 text-sm text-slate-700">
+                        <li>• <strong>Całkowite koszty:</strong> ${formatCurrency(data.totalCosts)} (538 zł × ${data.numMonths} ${data.numMonths === 1 ? 'miesiąc' : data.numMonths < 5 ? 'miesiące' : 'miesięcy'})</li>
+                        <li>• <strong>Działanie:</strong> Zaplanuj budżet na regularne zamówienia LRP i utrzymanie aktywności</li>
+                    </ul>
+                </div>
+            `;
+
+            // Podsumowanie
+            const profitText = data.netProfit >= 0 ? 'zysk' : 'strata';
+            const summaryBgClass = data.netProfit >= 0 ? 'bg-green-100' : 'bg-red-100';
+            const summaryBorderClass = data.netProfit >= 0 ? 'border-green-300' : 'border-red-300';
+            const summaryTextClass = data.netProfit >= 0 ? 'text-green-800' : 'text-red-800';
+            const summaryTextSmallClass = data.netProfit >= 0 ? 'text-green-700' : 'text-red-700';
+
+            planHTML += `
+                <div class="mt-4 p-4 ${summaryBgClass} rounded border ${summaryBorderClass}">
+                    <p class="font-bold ${summaryTextClass} text-center text-lg mb-2">
+                        🎯 Realizując ten plan osiągniesz ${profitText}: ${formatCurrency(Math.abs(data.netProfit))}
+                    </p>
+                    <p class="text-sm ${summaryTextSmallClass} text-center">
+                        Przychody: ${formatCurrency(data.totalIncome)} - Koszty: ${formatCurrency(data.totalCosts)} = ${formatCurrency(data.netProfit)}
+                    </p>
+                </div>
+
+                <div class="mt-4 p-3 bg-blue-100 rounded border border-blue-300">
+                    <p class="font-bold text-blue-800 text-center">
+                        💡 Wskazówka: Regularność i systematyczne działanie to klucz do sukcesu!
+                    </p>
+                </div>
+            `;
+
+            planHTML += `
+                    </div>
+                </div>
+            `;
+
+            planSection.innerHTML = planHTML;
+            planSection.style.display = 'block';
+
+            // Przewiń do sekcji planu
+            setTimeout(() => {
+                planSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
         }
 
         // Inicjalizacja
